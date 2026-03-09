@@ -128,6 +128,27 @@ class AnthropicToOpenAIConverter:
 
             if block_type == "text":
                 text_parts.append(get_block_attr(block, "text", ""))
+            elif block_type == "image":
+                flush_text()
+                source = get_block_attr(block, "source", {})
+                source_type = source.get("type") if isinstance(source, dict) else None
+                if source_type == "base64":
+                    media_type = source.get("media_type", "image/png")
+                    data = source.get("data", "")
+                    image_url = f"data:{media_type};base64,{data}"
+                elif source_type == "url":
+                    image_url = source.get("url", "")
+                else:
+                    continue
+                result.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": image_url},
+                        }
+                    ],
+                })
             elif block_type == "tool_result":
                 flush_text()
                 tool_content = get_block_attr(block, "content", "")
